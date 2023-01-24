@@ -16,7 +16,7 @@ subroutine sda_create(obj, name, type, dims, data_address)
     type(self_descr_array_type) :: obj
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: type
-    integer :: dims(:)
+    integer, intent(in) :: dims(:)
     type(c_ptr), value :: data_address
 
     obj%name = trim(name)
@@ -26,6 +26,98 @@ subroutine sda_create(obj, name, type, dims, data_address)
     obj%address = data_address
 
 end subroutine sda_create
+
+subroutine sda_create_from_file(obj, filename, name, type, dims, data_address, ier)
+    use iso_c_binding, only: c_loc, c_ptr
+    implicit none
+    include 'netcdf.inc'
+    type(self_descr_array_type) :: obj
+    character(len=*), intent(in) :: filename
+    character(len=*), intent(in) :: name
+    character(len=*), intent(out) :: type
+    integer, pointer, intent(out) :: dims(:)
+    type(c_ptr), intent(out) :: data_address
+    integer, intent(out) :: ier
+
+    integer :: status, n, ncid, varid, ndims, xtype, natts, i
+    integer, allocatable :: dim_ids(:)
+    character(len=128) :: varname
+    real(8), pointer :: rdata(:)
+    integer, pointer :: idata(:)
+
+    ier = 0
+    status = nf_open(filename, nf_nowrite, ncid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    status = nf_inq_varid(ncid, trim(name), varid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    status = nf_inq_varndims(ncid, varid, ndims)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    allocate(dim_ids(ndims))
+    allocate(dims(ndims))
+
+    status = nf_inq_var(ncid, varid, varname, xtype, ndims, dim_ids, natts)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    do i = 1, ndims
+        status = nf_inq_dimlen(ncid, dim_ids(i), dims(i))
+        if (status /= nf_noerr) then
+            write(0,*) nf_strerror(status)
+            ier = ier + 1
+        endif
+    enddo
+
+    ! read the data
+    n = product(dims)
+    if (xtype == nf_double) then
+        allocate(rdata(n))
+        status = nf_get_var_double(ncid, varid, rdata)
+        if (status /= nf_noerr) then
+            write(0,*) nf_strerror(status)
+            ier = ier + 1
+        endif
+        data_address = c_loc(rdata)
+        type = 'r8'
+    else if (xtype == nf_int) then
+        allocate(idata(n))
+        status = nf_get_var_int(ncid, varid, idata)
+        if (status /= nf_noerr) then
+            write(0,*) nf_strerror(status)
+            ier = ier + 1
+        endif
+        data_address = c_loc(idata)
+        type = 'i'
+    else 
+        ! error, unknown/unsupported data type
+        ier = ier + 1
+    endif
+
+    status = nf_close(ncid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+
+
+
+
+
+end subroutine sda_create_from_file
 
 subroutine sda_destroy(obj)
     implicit none
@@ -86,12 +178,6 @@ subroutine sda_write_data(obj, ncid, varid, ier)
     integer, pointer :: idata(:)
 
     ier = 0
-
-    status = nf_enddef(ncid)
-    if (status /= nf_noerr) then
-        write(0,*) nf_strerror(status)
-        ier = ier + 1
-    endif
 
     n = product(obj%dims)
 
