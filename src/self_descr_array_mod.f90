@@ -19,7 +19,7 @@ subroutine sda_create(obj, name, type, dims, data_address)
     integer :: dims(:)
     type(c_ptr), value :: data_address
 
-    obj%name = name
+    obj%name = trim(name)
     obj%type = type
     allocate(obj%dims(size(dims)))
     obj%dims = dims
@@ -50,11 +50,16 @@ subroutine sda_define_data(obj, ncid, varid, ier)
     ndims = size(obj%dims)
     allocate(dim_ids(ndims))
     do i = 1, ndims
-        write(i_str, '(A)') i
-        dim_name = obj%name // i_str
-        status = nf_def_dim(ncid, dim_name, obj%dims(i), dim_ids(i))
-        if(status /= nf_noerr) ier = ier + 1
+        write(i_str, '(I1)') i
+        dim_name = 'dim_' // trim(obj%name) // '_' //trim(i_str)
+        write(0, *) 'i = ', i, ' dim_name = ', trim(dim_name), ' dim = ', obj%dims(i)
+        status = nf_def_dim(ncid, trim(dim_name), obj%dims(i), dim_ids(i))
+        if(status /= nf_noerr) then
+            write(0,*) nf_strerror(status)
+            ier = ier + 1
+        endif
     enddo
+    write(0,*),'done defining dims dim_ids = ', dim_ids
 
     ! define the variable
     nc_type = nf_double
@@ -62,8 +67,14 @@ subroutine sda_define_data(obj, ncid, varid, ier)
         ! currently supporting only real(8) and integer types
         nc_type = nf_int
     endif
-    status = nf_def_var(ncid, obj%name, nc_type, dim_ids, varid)
-    if(status /= nf_noerr) ier = ier + 1
+    write(0,*) 'defining the var, trim(obj%name)=', trim(obj%name), ' nc_type=', nc_type, ' dim_ids=', dim_ids
+    status = nf_def_var(ncid, trim(obj%name), nc_type, size(dim_ids), dim_ids, varid)
+    write(0,*) 'status = ', status
+    if(status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+    write(0,*) 'done defining the var varid=', varid
 
 end subroutine sda_define_data
 
@@ -81,12 +92,23 @@ subroutine sda_write_data(obj, ncid, varid, ier)
 
     ier = 0
 
+    status = nf_enddef(ncid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
     n = product(obj%dims)
 
-    if (obj%type == 'r' .or. obj%type == 'd') then
+    write(0,*) 'n=', n, ' obj%type=', obj%type, 'ncid=', ncid, 'varid=', varid
+    if (obj%type == 'r8') then
         call c_f_pointer(obj%address, rdata, [n])
+        write(0,*) 'rdata = ', rdata
         status = nf_put_var_double(ncid, varid, rdata)
-        if (status /= nf_noerr) ier = ier + 1
+        if (status /= nf_noerr) then
+            write(0,*) nf_strerror(status)
+            ier = ier + 1
+        endif
     else if (obj%type == 'i') then
         ! TO DO
         ! call c_f_pointer(obj%address, idata, [n])
@@ -94,8 +116,12 @@ subroutine sda_write_data(obj, ncid, varid, ier)
         ! if (status /= nf_noerr) ier = ier + 1
     else
         ! error
-        if (status /= nf_noerr) ier = -1
+        if (status /= nf_noerr) then
+            ier = -1
+        endif
     endif
+    write(0,*)'done writing the data'
+
 end subroutine sda_write_data
 
 end module self_descr_array_mod
