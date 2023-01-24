@@ -10,13 +10,13 @@ end type self_descr_array_type
 
 contains
 
-function create(name, type, dims, data) result(obj)
+function sda_create(name, type, dims, data_address) result(obj)
     use iso_c_binding, only: c_loc, c_ptr
     implicit none
-    character(len=128), intent(in) :: name
-    character(len=2), intent(in) :: type
-    integer(8) :: dims(:)
-    type(c_ptr), pointer, intent(in) :: data
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: type
+    integer :: dims(:)
+    type(c_ptr), value :: data_address
 
     type(self_descr_array_type), pointer :: obj
 
@@ -27,15 +27,15 @@ function create(name, type, dims, data) result(obj)
     obj%type = type
     allocate(obj%dims(size(dims)))
     obj%dims = dims
-    obj%address = c_loc(data)
+    obj%address = data_address
 
-end function create
+end function sda_create
 
-subroutine destroy(obj)
+subroutine sda_destroy(obj)
     implicit none
     type(self_descr_array_type), pointer :: obj
     deallocate(obj%dims)
     deallocate(obj)
-end subroutine destroy
+end subroutine sda_destroy
 
 end module self_descr_array_mod
