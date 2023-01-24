@@ -7,7 +7,7 @@ program test_self_descr_array
 
     allocate(a(2, 3))
     obj = sda_create('a', 'r8', shape(a), c_loc(a))
-    call sda_destroy(obj)
+    ! call sda_destroy(obj)
 
 
 

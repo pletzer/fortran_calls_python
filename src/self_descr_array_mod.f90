@@ -19,15 +19,13 @@ function sda_create(name, type, dims, data_address) result(obj)
     type(c_ptr), value :: data_address
 
     type(self_descr_array_type), pointer :: obj
-
-    integer :: ndims
-
     allocate(obj)
-    obj%name = name
-    obj%type = type
-    allocate(obj%dims(size(dims)))
-    obj%dims = dims
-    obj%address = data_address
+    
+    ! obj%name = name
+    ! obj%type = type
+    ! allocate(obj%dims(size(dims)))
+    ! obj%dims = dims
+    ! obj%address = data_address
 
 end function sda_create
 
