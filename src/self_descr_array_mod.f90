@@ -59,12 +59,43 @@ subroutine sda_define_data(obj, ncid, varid, ier)
     ! define the variable
     nc_type = nf_double
     if (obj%type == 'i') then
+        ! currently supporting only real(8) and integer types
         nc_type = nf_int
     endif
     status = nf_def_var(ncid, obj%name, nc_type, dim_ids, varid)
     if(status /= nf_noerr) ier = ier + 1
 
-
 end subroutine sda_define_data
+
+subroutine sda_write_data(obj, ncid, varid, ier)
+    use iso_c_binding, only : c_f_pointer
+    implicit none
+    include 'netcdf.inc'
+    type(self_descr_array_type) :: obj
+    integer, intent(in) :: ncid
+    integer, intent(in) :: varid
+    integer, intent(out) :: ier
+    integer :: status, n
+    real(8), pointer :: rdata(:)
+    integer, pointer :: idata(:)
+
+    ier = 0
+
+    n = product(obj%dims)
+
+    if (obj%type == 'r' .or. obj%type == 'd') then
+        call c_f_pointer(obj%address, rdata, [n])
+        status = nf_put_var_double(ncid, varid, rdata)
+        if (status /= nf_noerr) ier = ier + 1
+    else if (obj%type == 'i') then
+        ! TO DO
+        ! call c_f_pointer(obj%address, idata, [n])
+        ! status = nf_put_var_int(ncid, varid, idata)
+        ! if (status /= nf_noerr) ier = ier + 1
+    else
+        ! error
+        if (status /= nf_noerr) ier = -1
+    endif
+end subroutine sda_write_data
 
 end module self_descr_array_mod
