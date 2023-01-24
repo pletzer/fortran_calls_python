@@ -33,15 +33,18 @@ subroutine sda_destroy(obj)
     deallocate(obj%dims)
 end subroutine sda_destroy
 
-subroutine sda_define_data(obj, ncid, varid)
-    use netcdf
+subroutine sda_define_data(obj, ncid, varid, ier)
     implicit none
+    include 'netcdf.inc'
     type(self_descr_array_type) :: obj
     integer, intent(in) :: ncid
     integer, intent(out) :: varid
+    integer, intent(out) :: ier
     integer :: status, nc_type, ndims, i
     integer, allocatable :: dim_ids(:)
     character(len=128) :: dim_name, i_str
+
+    ier = 0
 
     ! define the dimensions
     ndims = size(obj%dims)
@@ -49,17 +52,17 @@ subroutine sda_define_data(obj, ncid, varid)
     do i = 1, ndims
         write(i_str, '(A)') i
         dim_name = obj%name // i_str
-        status = nf90_def_dim(ncid, dim_name, obj%dims(i), dim_ids(i))
-        if(status /= nf90_noerr) call handle_error(status)
+        status = nf_def_dim(ncid, dim_name, obj%dims(i), dim_ids(i))
+        if(status /= nf_noerr) ier = ier + 1
     enddo
 
     ! define the variable
-    nc_type = nf90_double
+    nc_type = nf_double
     if (obj%type == 'i') then
-        nc_type = nf90_int
+        nc_type = nf_int
     endif
-    status = nf90_def_var(ncid, obj%name, nc_type, dim_ids, varid)
-    if(status /= nf90_noerr) call handle_error(status)
+    status = nf_def_var(ncid, obj%name, nc_type, dim_ids, varid)
+    if(status /= nf_noerr) ier = ier + 1
 
 
 end subroutine sda_define_data
