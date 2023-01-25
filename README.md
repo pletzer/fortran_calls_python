@@ -10,6 +10,7 @@ NetCCDF file.
 On mahuika:
 ```
 ml intel CMake netCDF-Fortran Python
+pip install defopt --user
 ```
 To compile:
 ```
