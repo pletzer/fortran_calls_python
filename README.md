@@ -1,7 +1,9 @@
 # fortran_calls_python
 
 This project shows how to call Python from Fortran using the instrinsic function 
-`execute_command_line`, which is available in Fortran 2008.
+`execute_command_line`, which is available in Fortran 2008. The command invokes
+a Python code which takes an input NetCDF file and produces an output 
+NetCCDF file. 
 
 ## Build the example
 
@@ -21,6 +23,11 @@ make
 
 ```
 ctest
+```
+
+## How to run the test driver
+```
+tests/test_driver
 ```
 
 
