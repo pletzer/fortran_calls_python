@@ -1,0 +1,79 @@
+program test_driver
+
+    use iso_c_binding, only: c_loc, c_f_pointer
+    use self_descr_array_mod
+
+    implicit none
+    include 'netcdf.inc'
+
+    real(8), pointer :: a(:, :)
+    integer, pointer :: b(:)
+    type(self_descr_array_type) :: obj_a, obj_b, obj_z
+    integer :: i, j, k, ier, ncid, a_id, b_id, status
+    real(8), pointer :: z(:)
+    character(len=256) :: inputfile='input.nc', outputfile='output.nc'
+    character(len=512) :: cmd
+
+    allocate(a(2, 3), b(6), z(2))
+
+    ! fill in the array
+    k = 0
+    do j = 1, size(a, 2)
+        do i = 1, size(a, 1)
+            a(i, j) = k
+            b(k + 1) = k
+            k = k + 1
+        enddo
+    enddo
+
+    ! create the object
+    call sda_create(obj_a, 'a', 'r8', shape(a), c_loc(a))
+    call sda_create(obj_b, 'b', 'i', shape(b), c_loc(b))
+
+    ! write the input data to file
+    status = nf_create(trim(inputfile), NF_NETCDF4, ncid)
+    if (status /= nf_noerr) call exit(1)
+
+    call sda_define_data(obj_a, ncid, a_id, ier)
+    if (ier /= 0) call exit(2)
+    call sda_define_data(obj_b, ncid, b_id, ier)
+    if (ier /= 0) call exit(2)
+
+    status = nf_enddef(ncid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    call sda_write_data(obj_a, ncid, a_id, ier)
+    if (ier /= 0) call exit(3)
+    call sda_write_data(obj_b, ncid, b_id, ier)
+    if (ier /= 0) call exit(3)
+
+    status = nf_close(ncid)
+    if (status /= nf_noerr) call exit(1)
+
+    ! execute the python code
+    cmd = 'python ${CMAKE_SOURCE_DIR}/py/my_model.py -i ' // &
+     & trim(inputfile) // ' -o ' // trim(outputfile)
+    call execute_command_line(cmd, exitstat=ier)
+    if (ier /= 0) then
+        write(0,*) 'error executing command: ', cmd
+        call exit(5)
+    endif
+
+    ! now fetch the output
+    call sda_create_from_file(obj_z, trim(outputfile), 'z', ier)
+    if (ier /= 0) then
+        write(0,*)'ERROR: could not get "z"'
+        call exit(6)
+    endif
+
+    call c_f_pointer(obj_z%address, z, obj_z%dims)
+    print*,'z = ', z
+
+    call sda_destroy(obj_a)
+    call sda_destroy(obj_b)
+    call sda_destroy(obj_z)
+
+end program test_driver
