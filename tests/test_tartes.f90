@@ -41,7 +41,7 @@ program test_tartes
     do i = 1, nlayer
         ssa(i) = 20
         density(i) = 200
-        thickness(i) = 0.01
+        thickness(i) = 0.01_8
     enddo
 
     ! Create the self-described-array (SDA) objectsi. r8 = 
