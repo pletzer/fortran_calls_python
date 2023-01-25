@@ -13,5 +13,10 @@ add_executable(test_driver ${CMAKE_BINARY_DIR}/test_driver.f90)
 set_target_properties(test_driver PROPERTIES LINKER_LANGUAGE Fortran)
 target_link_libraries(test_driver fortran2python ${NETCDF_LIBRARIES})
 
+add_executable(test_tartes test_tartes.f90)
+set_target_properties(test_driver PROPERTIES LINKER_LANGUAGE Fortran)
+target_link_libraries(test_tartes fortran2python ${NETCDF_LIBRARIES})
+
 add_test(NAME self_descr_array COMMAND test_self_descr_array)
 add_test(NAME driver COMMAND test_driver)
+add_test(NAME tartes COMMAND test_tartes)

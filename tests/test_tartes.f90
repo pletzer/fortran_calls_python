@@ -1,0 +1,125 @@
+program test_tartes
+
+    use iso_c_binding, only: c_loc, c_f_pointer
+    use self_descr_array_mod
+
+    implicit none
+    include 'netcdf.inc'
+
+    ! In this example, the python code takes two arrays, one is float64 
+    ! and the other is integer. They have to be pointer types.
+    real(8), pointer :: wavelengths(:), ssa(:), density(:), thickness(:)
+
+    ! Objects corresponding to the above arrays. They know about their
+    ! type and their shape
+    type(self_descr_array_type) :: obj_wavelengths, obj_ssa, obj_density, obj_thickness
+
+    ! Other local variables
+    integer :: i, j, k, ier, ncid, status, nlayer=3, nwavelength=2
+    integer :: wavelengths_id, ssa_id, density_id, thickness_id
+
+    ! Output
+    real(8), pointer :: albedo(:)
+    type(self_descr_array_type) :: obj_albedo
+
+    ! The Python code communicates with the Fortran caller via these
+    ! two files
+    character(len=256) :: inputfile='input.nc', outputfile='output.nc'
+
+    ! Sring that holds the command to execute
+    character(len=512) :: cmd
+
+    ! Build the arrays
+    allocate(wavelengths(nwavelength), ssa(nlayer), density(nlayer), thickness(nlayer))
+    allocate(albedo(nwavelength))
+
+    ! Fill in the input arrays
+    do i = 1, nwavelength
+        wavelengths(i) = (300 + i*100) * 1.e-9
+    enddo
+
+    do i = 1, nlayer
+        ssa(i) = 20
+        density(i) = 200
+        thickness(i) = 0.01
+    enddo
+
+    ! Create the self-described-array (SDA) objectsi. r8 = 
+    ! float64. i == integer. c_loc takes the address of the
+    ! array. 
+    call sda_create(obj_wavelengths, 'wavelengths', 'r8', shape(wavelengths), c_loc(wavelengths))
+    call sda_create(obj_ssa, 'ssa', 'r8', shape(ssa), c_loc(ssa))
+    call sda_create(obj_density, 'density', 'r8', shape(density), c_loc(density))
+    call sda_create(obj_thickness, 'thickness', 'r8', shape(thickness), c_loc(thickness))
+
+    ! Write the input data to file. We need to create the file,
+    ! then we need to define the data (type, shape) and finally we 
+    ! write the data to file. 
+    status = nf_create(trim(inputfile), NF_NETCDF4, ncid)
+    if (status /= nf_noerr) call exit(1)
+
+    ! Now we define the data. Note we return the netcdf id of each 
+    ! variable (a_id, b_id, ...)
+    call sda_define_data(obj_wavelengths, ncid, wavelengths_id, ier)
+    if (ier /= 0) call exit(2)
+
+    call sda_define_data(obj_ssa, ncid, ssa_id, ier)
+    if (ier /= 0) call exit(2)
+
+    call sda_define_data(obj_density, ncid, density_id, ier)
+    if (ier /= 0) call exit(2)
+
+    call sda_define_data(obj_thickness, ncid, thickness_id, ier)
+    if (ier /= 0) call exit(2)
+
+    ! Things have now been defined. 
+    status = nf_enddef(ncid)
+    if (status /= nf_noerr) then
+        write(0,*) nf_strerror(status)
+        ier = ier + 1
+    endif
+
+    ! Write the data.
+    call sda_write_data(obj_wavelengths, ncid, wavelengths_id, ier)
+    if (ier /= 0) call exit(3)
+
+    call sda_write_data(obj_ssa, ncid, ssa_id, ier)
+    if (ier /= 0) call exit(3)
+
+    call sda_write_data(obj_density, ncid, density_id, ier)
+    if (ier /= 0) call exit(3)
+
+    call sda_write_data(obj_thickness, ncid, thickness_id, ier)
+    if (ier /= 0) call exit(3)
+
+    ! Done, close the input NetCDF file
+    status = nf_close(ncid)
+    if (status /= nf_noerr) call exit(1)
+
+    ! Execute the python code. 
+    cmd = 'python wrf_hydro_tartes_model.py -i ' // &
+     & trim(inputfile) // ' -o ' // trim(outputfile)
+    call execute_command_line(cmd, exitstat=ier)
+    if (ier /= 0) then
+        write(0,*) 'error executing command: ', cmd
+        call exit(5)
+    endif
+
+    ! Now fetch the output.
+    call sda_create_from_file(obj_albedo, trim(outputfile), 'albedo', ier)
+    if (ier /= 0) then
+        write(0,*)'ERROR: could not get "z"'
+        call exit(6)
+    endif
+
+    ! Convert the address to data.
+    call c_f_pointer(obj_albedo%address, albedo, obj_albedo%dims)
+    print*,'albedo = ', albedo
+
+    call sda_destroy(obj_wavelengths)
+    call sda_destroy(obj_ssa)
+    call sda_destroy(obj_density)
+    call sda_destroy(obj_thickness)
+    call sda_destroy(obj_albedo)
+
+end program test_tartes
