@@ -42,28 +42,24 @@ subroutine sda_create_from_file(obj, filename, name, ier)
     real(8), pointer :: rdata(:)
     integer, pointer :: idata(:)
 
-    write(0,*)'0'
     ier = 0
     status = nf_open(filename, nf_nowrite, ncid)
     if (status /= nf_noerr) then
         write(0,*) nf_strerror(status)
         ier = ier + 1
     endif
-    write(0,*)'1'
 
     status = nf_inq_varid(ncid, trim(name), varid)
     if (status /= nf_noerr) then
         write(0,*) nf_strerror(status)
         ier = ier + 1
     endif
-    write(0,*)'2'
 
     status = nf_inq_varndims(ncid, varid, ndims)
     if (status /= nf_noerr) then
         write(0,*) nf_strerror(status)
         ier = ier + 1
     endif
-    write(0,*)'3'
 
     allocate(dim_ids(ndims))
     allocate(obj%dims(ndims))
@@ -73,7 +69,6 @@ subroutine sda_create_from_file(obj, filename, name, ier)
         write(0,*) nf_strerror(status)
         ier = ier + 1
     endif
-    write(0,*)'4'
 
     do i = 1, ndims
         status = nf_inq_dimlen(ncid, dim_ids(i), obj%dims(i))
@@ -82,7 +77,6 @@ subroutine sda_create_from_file(obj, filename, name, ier)
             ier = ier + 1
         endif
     enddo
-    write(0,*)'5'
 
     ! read the data
     n = product(obj%dims)
@@ -108,15 +102,12 @@ subroutine sda_create_from_file(obj, filename, name, ier)
         ! error, unknown/unsupported data type
         ier = ier + 1
     endif
-    write(0,*)'6'
 
     status = nf_close(ncid)
     if (status /= nf_noerr) then
         write(0,*) nf_strerror(status)
         ier = ier + 1
     endif
-    write(0,*)'7'
-
 
 end subroutine sda_create_from_file
 
