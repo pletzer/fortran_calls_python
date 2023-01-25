@@ -8,9 +8,7 @@ program test_self_descr_array
 
     real(8), pointer :: ra(:, :)
     integer, pointer :: ia(:)
-    type(self_descr_array_type) :: obj_ra, obj_ia, obj_rb, obj_ib
-    real(8), pointer :: rb(:, :)
-    integer, pointer :: ib(:)
+    type(self_descr_array_type) :: obj_ra, obj_ia
     integer :: i, j, k, ier, ncid, ra_id, ia_id, status
 
     allocate(ra(2, 3), ia(6))
