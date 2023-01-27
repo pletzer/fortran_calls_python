@@ -4,6 +4,7 @@ include_directories(
 )
 
 configure_file(test_driver.f90.in ${CMAKE_BINARY_DIR}/test_driver.f90)
+configure_file(test_tartes.f90.in ${CMAKE_BINARY_DIR}/test_tartes.f90)
 
 add_executable(test_self_descr_array test_self_descr_array.f90)
 set_target_properties(test_self_descr_array PROPERTIES LINKER_LANGUAGE Fortran)
@@ -13,7 +14,7 @@ add_executable(test_driver ${CMAKE_BINARY_DIR}/test_driver.f90)
 set_target_properties(test_driver PROPERTIES LINKER_LANGUAGE Fortran)
 target_link_libraries(test_driver fortran2python ${NETCDF_LIBRARIES})
 
-add_executable(test_tartes test_tartes.f90)
+add_executable(test_tartes ${CMAKE_BINARY_DIR}/test_tartes.f90)
 set_target_properties(test_driver PROPERTIES LINKER_LANGUAGE Fortran)
 target_link_libraries(test_tartes fortran2python ${NETCDF_LIBRARIES})
 

@@ -97,7 +97,7 @@ program test_tartes
     if (status /= nf_noerr) call exit(1)
 
     ! Execute the python code. 
-    cmd = 'python wrf_hydro_tartes_model.py -i ' // &
+    cmd = 'python ${CMAKE_SOURCE_DIR}/py/wrf_hydro_tartes_model.py -i ' // &
      & trim(inputfile) // ' -o ' // trim(outputfile)
     call execute_command_line(cmd, exitstat=ier)
     if (ier /= 0) then

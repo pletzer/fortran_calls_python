@@ -12,6 +12,13 @@ On mahuika:
 ml intel CMake netCDF-Fortran Python
 pip install defopt --user
 ```
+Also, you will need to install tartes and dependencies:
+```
+git clone https://github.com/ghislainp/tartes.git
+cd tartes
+pip install . --user
+```
+
 To compile:
 ```
 mkdir build
