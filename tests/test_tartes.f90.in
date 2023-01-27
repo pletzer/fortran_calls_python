@@ -15,7 +15,7 @@ program test_tartes
     type(self_descr_array_type) :: obj_wavelengths, obj_ssa, obj_density, obj_thickness
 
     ! Other local variables
-    integer :: i, j, k, ier, ncid, status, nlayer=3, nwavelength=2
+    integer :: i, j, k, ier, ncid, status, nlayer=3, nwavelength=220
     integer :: wavelengths_id, ssa_id, density_id, thickness_id
 
     ! Output
@@ -35,14 +35,15 @@ program test_tartes
 
     ! Fill in the input arrays
     do i = 1, nwavelength
-        wavelengths(i) = (300 + i*100) * 1.e-9
+        wavelengths(i) = (300 + (i - 1)*10) * 1.e-9
     enddo
 
     do i = 1, nlayer
         ssa(i) = 20
-        density(i) = 200
-        thickness(i) = 0.01_8
+        density(i) = 300
+        !thickness(i) = 0.01_8
     enddo
+    thickness = [0.01_8, 0.10_8, 1000._8]
 
     ! Create the self-described-array (SDA) objectsi. r8 = 
     ! float64. i == integer. c_loc takes the address of the
