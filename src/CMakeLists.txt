@@ -6,5 +6,7 @@ set(SRC self_descr_array_mod.f90 ${CMAKE_BINARY_DIR}/src/tartes_albedo.f90)
 add_library(fortran2python SHARED ${SRC})
 target_link_libraries(fortran2python ${NETCDF_LIBRARIES})
 
-
+install(TARGETS fortran2python
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+)
 

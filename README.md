@@ -23,9 +23,14 @@ To compile:
 ```
 mkdir build
 cd build
-FC=ifort cmake ..
+FC=ifort cmake -D CMAKE_INSTALL_PREFIX=<path to directory> ..
 make
 ```
+
+```
+make install
+```
+will install the libfortran2python.so library into the directory specified by `CMAKE_INSTALL_PREFIX`.
 
 ## Test the code
 
